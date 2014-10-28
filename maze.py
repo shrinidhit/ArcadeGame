@@ -114,17 +114,23 @@ def create_level (num):
 def create_screen (level,window):
     # use this instead of Rectangle below for nicer screen
     brick = 'brick.gif'
+    ladder = 'ladder.gif'
+    rope = 'rope.gif'
+    gold = 'gold.gif'
+
+    #Map:
+    Tiles = {1: brick, 2: ladder, 3: rope, 4: gold}
+
+    #Returning image
     def image (sx,sy,what):
         return Image(Point(sx+CELL_SIZE/2,sy+CELL_SIZE/2),what)
 
+    #Loop to create map
     for (index,cell) in enumerate(level):
         if cell != 0:
             (sx,sy) = screen_pos_index(index)
-            elt = Rectangle(Point(sx+1,sy+1),
-                            Point(sx+CELL_SIZE-1,sy+CELL_SIZE-1))
-            elt.setFill('sienna')
+            elt = image (sx,sy,Tiles[cell])
             elt.draw(window)
-
 
 MOVE = {
     'Left': (-1,0),
