@@ -25,6 +25,11 @@ def screen_pos_index (index):
     y = (index - x) / LEVEL_WIDTH
     return screen_pos(x,y)
 
+def pos_index (index):
+    x = index % LEVEL_WIDTH
+    y = (index-x)/LEVEL_WIDTH
+    return (x,y)
+
 def index (x,y):
     return x + (y*LEVEL_WIDTH)
 
@@ -57,6 +62,20 @@ class Player (Character):
 
     def at_exit (self):
         return (self._y == 0)
+
+    def dig (self,xd,yd,xn,yn,elts):
+        dig_x = self._x + xd
+        dig_y = self._y + yd
+        near_x = self._x + xn
+        near_y = self._y + yn
+
+        dig_loc = self._level[index(dig_x,dig_y)]
+        near_loc = self._level[index(near_x,near_y)]
+
+        if dig_loc == 1 and near_loc == 0:
+            elts[dig_x][dig_y].undraw()
+            self._level[index(dig_x,dig_y)] = 0
+
 
 
 class Baddie (Character):
@@ -106,8 +125,8 @@ def create_level (num):
     screen.extend([2,0,1,4,4,1,0,0,1,0,4,4,4,1,0,0,1,2,0,4,4,4,0,1,0,0,2,0,0,1,4,4,4,1,2])
     screen.extend([2,0,1,1,1,1,0,0,1,2,1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,0,2,0,0,1,1,1,1,1,2])
     screen.extend([2,0,3,3,3,3,3,3,3,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,3,3,3,3,3,3,3,2])
-    screen.extend([1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,1])
-    screen.extend([1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,1])
+    screen.extend([1,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,1])
+    screen.extend([1,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,2,0,0,0,0,0,0,0,1])
     screen.extend([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
     return screen
 
@@ -125,12 +144,20 @@ def create_screen (level,window):
     def image (sx,sy,what):
         return Image(Point(sx+CELL_SIZE/2,sy+CELL_SIZE/2),what)
 
+    #List of screen elements:
+    elements = [[None for i in range(20)] for j in range(35)]
+
     #Loop to create map
     for (index,cell) in enumerate(level):
         if cell != 0:
             (sx,sy) = screen_pos_index(index)
+            (px,py) = pos_index(index)
             elt = image (sx,sy,Tiles[cell])
+            elements[px][py] = elt
             elt.draw(window)
+
+    return elements
+
 
 MOVE = {
     'Left': (-1,0),
@@ -139,6 +166,10 @@ MOVE = {
     'Down' : (0,1)
 }
 
+DIG = {
+    'a':(-1,1,-1,0),
+    'z':(1,1,1,0)
+}
 
 def main ():
 
@@ -155,7 +186,7 @@ def main ():
 
     level = create_level(1)
 
-    screen = create_screen(level,window)
+    elements = create_screen(level,window)
 
     p = Player(10,18,window,level)
 
@@ -171,6 +202,9 @@ def main ():
         if key in MOVE:
             (dx,dy) = MOVE[key]
             p.move(dx,dy)
+        if key in DIG:
+            (xd,yd,xn,yn) = DIG[key]
+            p.dig(xd,yd,xn,yn,elements)
 
         # baddies should probably move here
 
