@@ -38,18 +38,40 @@ class Character (object):
         self._y = y
         self._level = level
 
+    def loc(self):
+        return (self._x, self._y)
+
+    def level(self):
+        return self._level
+
+    def level_coord(self,x,y):
+        return self._level[index(x,y)]
+
     def same_loc (self,x,y):
         return (self._x == x and self._y == y)
+
+    def gravity(self):
+        self._y = self._y + 1
+        self._img.move(0,1*CELL_SIZE)
+
+    def current_pos(self):
+        return self.level_coord(self._x, self._y)
 
     def move (self,dx,dy):
         tx = self._x + dx
         ty = self._y + dy
         if tx >= 0 and ty >= 0 and tx < LEVEL_WIDTH and ty < LEVEL_HEIGHT:
-            if self._level[index(tx,ty)] == 0:
+            if self.level_coord(tx,ty) != 1:
+                #Original Move
                 self._x = tx
                 self._y = ty
                 self._img.move(dx*CELL_SIZE,dy*CELL_SIZE)
-                
+                #If player is in air and air is below player:
+                while self.level_coord(self._x, self._y + 1) == 0 and self.current_pos() == 0:
+                    self.gravity()
+                #If a rope is below a player:
+                if self.level_coord(self._x, self._y + 1) == 3:
+                    self.gravity()
 
 class Player (Character):
     def __init__ (self,x,y,window,level):
@@ -80,6 +102,30 @@ def won (window):
     t.draw(window)
     window.getKey()
     exit(0)
+
+def is_move_valid(player,dx,dy):
+    #Getting player and transform coordinates
+    playerx, playery = player.loc()
+    tx = playerx + dx
+    ty = playery + dy
+
+    def next_block(x, y, xdir, ydir):
+        return player.level_coord(x - xdir, y - ydir)
+
+    #Checking if transformed coord not a brick or air:
+    if player.level_coord(tx,ty) not in [1,0]:
+        return True
+    #If tranfsormed coord is air
+    elif player.level_coord(tx,ty) == 0:
+        #If brick is below:
+        if next_block(tx, ty, 0, -1):
+            return True
+        #If brick is not below but moving right,left,or down and currently on ground
+        if dy != -1:
+            return True
+    return False
+
+
 
 #0 == Empty
 #1 == Brick
@@ -170,7 +216,8 @@ def main ():
             exit(0)
         if key in MOVE:
             (dx,dy) = MOVE[key]
-            p.move(dx,dy)
+            if is_move_valid(p, dx, dy):
+                p.move(dx,dy)
 
         # baddies should probably move here
 
