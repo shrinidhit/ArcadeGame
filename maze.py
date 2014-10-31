@@ -77,7 +77,6 @@ class Player (Character):
             self._level[index(dig_x,dig_y)] = 0
 
 
-
 class Baddie (Character):
     def __init__ (self,x,y,window,level,player):
         Character.__init__(self,'red.gif',x,y,window,level)
@@ -99,6 +98,20 @@ def won (window):
     t.draw(window)
     window.getKey()
     exit(0)
+
+def check_gold(level):
+    gold = False
+    for j in range(LEVEL_HEIGHT):
+        for i in range(LEVEL_WIDTH):
+            if level[index(i,j)] == 4:
+                gold = True
+                break
+    return gold
+
+def build_exit(level):
+    level[index(34,0)] = 2
+    level[index(34,1)] = 2
+    level[index(34,2)] = 2
 
 #0 == Empty
 #1 == Brick
@@ -205,6 +218,12 @@ def main ():
         if key in DIG:
             (xd,yd,xn,yn) = DIG[key]
             p.dig(xd,yd,xn,yn,elements)
+
+        exit_built = False
+        if check_gold(level) == False and exit_built == False:
+            exit_built = True
+            build_exit(level)
+            create_screen(level,window)
 
         # baddies should probably move here
 
