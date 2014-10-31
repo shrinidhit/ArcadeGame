@@ -8,6 +8,7 @@
 
 
 from graphics import *
+import random
 
 LEVEL_WIDTH = 35
 LEVEL_HEIGHT = 20    
@@ -62,6 +63,28 @@ class Character (object):
     def current_pos(self):
         return self.level_coord(self._x, self._y)
 
+    def is_move_valid(self,dx,dy):
+        #Getting player and transform coordinates
+        x, y = self.loc()
+        tx = x + dx
+        ty = y + dy
+
+        def next_block(x, y, xdir, ydir):
+            return self.level_coord(x - xdir, y - ydir)
+
+        #Checking if transformed coord not a brick or air:
+        if self.level_coord(tx,ty) not in [1,0]:
+            return True
+        #If tranfsormed coord is air
+        elif self.level_coord(tx,ty) == 0:
+            #If brick is below:
+            if next_block(tx, ty, 0, -1):
+                return True
+            #If brick is not below but moving right,left,or down and currently on ground
+            if dy != -1:
+                return True
+        return False
+
     def move (self,dx,dy):
         tx = self._x + dx
         ty = self._y + dy
@@ -73,7 +96,6 @@ class Character (object):
                 self._img.move(dx*CELL_SIZE,dy*CELL_SIZE)
                 #If player is in air and air is below player:
                 while self._y < LEVEL_HEIGHT - 1:
-                    print self._y
                     if (self.level_coord(self._x, self._y + 1) == 0) and (self.current_pos() == 0):
                         self.gravity()
                     else: 
@@ -108,6 +130,36 @@ class Baddie (Character):
         Character.__init__(self,'red.gif',x,y,window,level)
         self._player = player
 
+    def event(self):
+        def compare(x1,x2):
+            if x1>x2:
+                return 1
+            if x1<x2:
+                return -1
+        #First, prioritize y position to try moving in y direction    
+        if self._player._y != self._x:
+            ydir = compare(self._player._y, self._y)
+            #try y motion
+            if self.is_move_valid(0, ydir):
+                self.move(0, ydir)
+            elif self.is_move_valid(0, -ydir):
+                self.move(0, -ydir)
+            elif self.is_move_valid(1, 0):
+                self.move(1,0)
+            else:
+                self.move(-1,0)
+        #If y position is equal, priorotize x motion
+        else:
+            xdir = compare(player._x, self._x)
+            if self.is_move_valid(xdir, 0):
+                self.move(xdir, 0)
+            if self.is_move_valid(-xdir, 0):
+                self.move(-xdir, 0)
+            elif self.is_move_valid(0,1):
+                self.move(0,1)
+            else:
+                self.move(0,-1)
+
 
 def lost (window):
     t = Text(Point(WINDOW_WIDTH/2+10,WINDOW_HEIGHT/2+10),'YOU LOST!')
@@ -138,28 +190,6 @@ def build_exit(level):
     level[index(34,0)] = 2
     level[index(34,1)] = 2
     level[index(34,2)] = 2
-
-def is_move_valid(player,dx,dy):
-    #Getting player and transform coordinates
-    playerx, playery = player.loc()
-    tx = playerx + dx
-    ty = playery + dy
-
-    def next_block(x, y, xdir, ydir):
-        return player.level_coord(x - xdir, y - ydir)
-
-    #Checking if transformed coord not a brick or air:
-    if player.level_coord(tx,ty) not in [1,0]:
-        return True
-    #If tranfsormed coord is air
-    elif player.level_coord(tx,ty) == 0:
-        #If brick is below:
-        if next_block(tx, ty, 0, -1):
-            return True
-        #If brick is not below but moving right,left,or down and currently on ground
-        if dy != -1:
-            return True
-    return False
 
 #0 == Empty
 #1 == Brick
@@ -262,7 +292,7 @@ def main ():
             exit(0)
         if key in MOVE:
             (dx,dy) = MOVE[key]
-            if is_move_valid(p, dx, dy):
+            if p.is_move_valid(dx, dy):
                 p.move(dx,dy)
         if key in DIG:
             (xd,yd,xn,yn) = DIG[key]
