@@ -85,6 +85,11 @@ class Player (Character):
     def at_exit (self):
         return (self._y == 0)
 
+    def pickup_gold (self,elts):
+        if self._level[index(self._x,self._y)] == 4:
+            elts[self._x][self._y].undraw()
+            self._level[index(self._x,self._y)] = 0
+
     def dig (self,xd,yd,xn,yn,elts):
         dig_x = self._x + xd
         dig_y = self._y + yd
@@ -103,6 +108,21 @@ class Baddie (Character):
     def __init__ (self,x,y,window,level,player):
         Character.__init__(self,'red.gif',x,y,window,level)
         self._player = player
+
+class Event_Queue(object):
+    def __init__(self):
+        self.queue = {}
+
+    def enqueue(when,obj):
+        self.queue[obj] = when
+
+    def dequeue_if_ready():
+        for key,val in self.queue.iteritems():
+            if val == 0:
+                key.event()
+                del self.queue[key]
+            else:
+                self.queue[key] -= 1
 
 
 def lost (window):
@@ -130,10 +150,23 @@ def check_gold(level):
                 break
     return gold
 
-def build_exit(level):
+def build_exit(level,elts,player,win):
     level[index(34,0)] = 2
     level[index(34,1)] = 2
     level[index(34,2)] = 2
+
+    ladder = 'ladder.gif'
+
+    l1 = screen_pos(34,0)
+    l2 = screen_pos(34,1)
+    l3 = screen_pos(34,2)
+
+    image(l1[0],l1[1],ladder).draw(win)
+    image(l2[0],l2[1],ladder).draw(win)
+    image(l3[0],l3[1],ladder).draw(win)
+
+    player._img.undraw()
+    player._img.draw(win)
 
 def is_move_valid(player,dx,dy):
     #Getting player and transform coordinates
@@ -187,6 +220,10 @@ def create_level (num):
     screen.extend([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
     return screen
 
+#Returning image
+def image (sx,sy,what):
+        return Image(Point(sx+CELL_SIZE/2,sy+CELL_SIZE/2),what)
+
 def create_screen (level,window):
     # use this instead of Rectangle below for nicer screen
     brick = 'brick.gif'
@@ -196,10 +233,6 @@ def create_screen (level,window):
 
     #Map:
     Tiles = {1: brick, 2: ladder, 3: rope, 4: gold}
-
-    #Returning image
-    def image (sx,sy,what):
-        return Image(Point(sx+CELL_SIZE/2,sy+CELL_SIZE/2),what)
 
     #List of screen elements:
     elements = [[None for i in range(20)] for j in range(35)]
@@ -245,11 +278,18 @@ def main ():
 
     elements = create_screen(level,window)
 
+    queue = Event_Queue()
+
     p = Player(10,18,window,level)
 
     baddie1 = Baddie(5,1,window,level,p)
     baddie2 = Baddie(10,1,window,level,p)
     baddie3 = Baddie(15,1,window,level,p)
+    baddies = [baddie1,baddie2,baddie3]
+    for baddie in baddies:
+        queue.enqueue(1,baddie)
+
+    exit_built = False
 
     while not p.at_exit():
         key = window.checkKey()
@@ -264,11 +304,12 @@ def main ():
             (xd,yd,xn,yn) = DIG[key]
             p.dig(xd,yd,xn,yn,elements)
 
-        exit_built = False
+        p.pickup_gold(elements)        
+        queue.dequeue_if_ready()
+
         if check_gold(level) == False and exit_built == False:
             exit_built = True
-            build_exit(level)
-            create_screen(level,window)
+            build_exit(level,elements,p,window)
 
         # baddies should probably move here
 
