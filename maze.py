@@ -117,10 +117,10 @@ class Event_Queue(object):
     def __init__(self):
         self.queue = {}
 
-    def enqueue(when,obj):
+    def enqueue(self,when,obj):
         self.queue[obj] = when
 
-    def dequeue_if_ready():
+    def dequeue_if_ready(self):
         for key,val in self.queue.iteritems():
             if val == 0:
                 key.event()
