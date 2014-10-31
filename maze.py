@@ -121,12 +121,17 @@ class Event_Queue(object):
         self.queue[obj] = when
 
     def dequeue_if_ready(self):
+
+        items_to_delete = []
         for key,val in self.queue.iteritems():
             if val == 0:
                 key.event()
-                del self.queue[key]
+                items_to_delete.append(key)
             else:
                 self.queue[key] -= 1
+
+        for key in items_to_delete:
+            del self.queue[key]
 
 
 def lost (window):
