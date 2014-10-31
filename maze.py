@@ -72,10 +72,14 @@ class Character (object):
                 self._y = ty
                 self._img.move(dx*CELL_SIZE,dy*CELL_SIZE)
                 #If player is in air and air is below player:
-                while self.level_coord(self._x, self._y + 1) == 0 and self.current_pos() == 0:
-                    self.gravity()
+                while self._y < LEVEL_HEIGHT - 1:
+                    print self._y
+                    if (self.level_coord(self._x, self._y + 1) == 0) and (self.current_pos() == 0):
+                        self.gravity()
+                    else: 
+                        break
                 #If a rope is below a player:
-                if self.level_coord(self._x, self._y + 1) == 3:
+                if (self._y < LEVEL_HEIGHT - 1) and (self.level_coord(self._x, self._y + 1) == 3):
                     self.gravity()
 
 class Player (Character):
