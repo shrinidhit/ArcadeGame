@@ -121,7 +121,6 @@ class Event_Queue(object):
         self.queue[obj] = when
 
     def dequeue_if_ready(self):
-
         items_to_delete = []
         for key,val in self.queue.iteritems():
             if val == 0:
