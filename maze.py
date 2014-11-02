@@ -85,7 +85,11 @@ class Character (object):
 
         def next_block(x, y, xdir, ydir):
             return self.level_coord(x - xdir, y - ydir)
-
+        #Baddie Collision:
+        for baddie in Baddie.baddies:
+            x,y = baddie.loc()
+            if (tx == x) and (ty == y):
+                return False
         #Checking if transformed coord not a brick or air:
         if self.level_coord(tx,ty) not in [1,0]:
             return True
@@ -138,9 +142,11 @@ class Player (Character):
 
 
 class Baddie (Character):
+    baddies = []
     def __init__ (self,x,y,window,level,player):
         Character.__init__(self,'red.gif',x,y,window,level)
         self._player = player
+        Baddie.baddies.append(self)
 
     def event(self,queue):
         def compare(x1,x2):
@@ -280,7 +286,6 @@ def create_baddies(window, level, player):
     baddies = []
     for pos in positions:
         baddies.append(Baddie(pos[0],pos[1],window,level,player))
-    return baddies
 
 def create_window():
     #Create Window
@@ -314,9 +319,9 @@ def main ():
     queue = Event_Queue()
         #Creating Characters
     p = Player(10,18,window,level)
-    baddies = create_baddies(window, level, p)
+    create_baddies(window, level, p)
         #Adding objects to Queu
-    for baddie in baddies:
+    for baddie in Baddie.baddies:
         queue.enqueue(1000,baddie)
 
     #Running Game Loop:
