@@ -1,24 +1,20 @@
-#
-# MAZE
-# 
-# Example game
-#
-# Version without baddies running around
-#
+# Shrinidhi Thirumalai and Haley Pelletier
+# Gold Runner Maze Game
 
-
+#Imports
 from graphics import *
 import random
 import time
 
+#Global Variables
 LEVEL_WIDTH = 35
 LEVEL_HEIGHT = 20    
-
 CELL_SIZE = 24
 WINDOW_WIDTH = CELL_SIZE*LEVEL_WIDTH
 WINDOW_HEIGHT = CELL_SIZE*LEVEL_HEIGHT
 
 
+#Basic Functions
 def screen_pos (x,y):
     return (x*CELL_SIZE+10,y*CELL_SIZE+10)
 
@@ -35,6 +31,11 @@ def pos_index (index):
 def index (x,y):
     return x + (y*LEVEL_WIDTH)
 
+def image (sx,sy,what):
+    """Returning Image"""
+    return Image(Point(sx+CELL_SIZE/2,sy+CELL_SIZE/2),what)
+
+#Classes
 class Character (object):
     def __init__ (self,pic,x,y,window,level):
         (sx,sy) = screen_pos(x,y)
@@ -58,8 +59,20 @@ class Character (object):
         return (self._x == x and self._y == y)
 
     def gravity(self):
-        self._y = self._y + 1
-        self._img.move(0,1*CELL_SIZE)
+        #Falling one unit:
+        def fall(self):
+            self._y = self._y + 1
+            self._img.move(0,1*CELL_SIZE)
+        #Falls while player is in air or gold and air is below player:
+        while self._y < LEVEL_HEIGHT - 1:
+            if (self.level_coord(self._x, self._y + 1) in [0,4]) and (self.current_pos() == 0):
+                fall(self)
+            else: 
+                break
+        #Falls one unit if a rope is below a player:
+        if (self._y < LEVEL_HEIGHT - 1) and (self.level_coord(self._x, self._y + 1) == 3):
+            fall(self)
+
 
     def current_pos(self):
         return self.level_coord(self._x, self._y)
@@ -95,15 +108,8 @@ class Character (object):
                 self._x = tx
                 self._y = ty
                 self._img.move(dx*CELL_SIZE,dy*CELL_SIZE)
-                #If player is in air and air is below player:
-                while self._y < LEVEL_HEIGHT - 1:
-                    if (self.level_coord(self._x, self._y + 1) == 0) and (self.current_pos() == 0):
-                        self.gravity()
-                    else: 
-                        break
-                #If a rope is below a player:
-                if (self._y < LEVEL_HEIGHT - 1) and (self.level_coord(self._x, self._y + 1) == 3):
-                    self.gravity()
+                #Gravity
+                self.gravity()
 
 class Player (Character):
     def __init__ (self,x,y,window,level):
@@ -167,6 +173,7 @@ class Baddie (Character):
                 self.move(0,-1)
         else:
             lost(self._window)
+        #Reads event to list after moving
         time.sleep(.001)
         queue.enqueue(1000,self)
 
@@ -185,6 +192,7 @@ class Event_Queue(object):
             else:
                 self.queue[key] -= 1
 
+#Functions
 def lost (window):
     t = Text(Point(WINDOW_WIDTH/2+10,WINDOW_HEIGHT/2+10),'YOU LOST!')
     t.setSize(36)
@@ -228,35 +236,8 @@ def build_exit(level,elts,player,win):
     player._img.undraw()
     player._img.draw(win)
 
-def is_move_valid(player,dx,dy):
-    #Getting player and transform coordinates
-    playerx, playery = player.loc()
-    tx = playerx + dx
-    ty = playery + dy
-
-    def next_block(x, y, xdir, ydir):
-        return player.level_coord(x - xdir, y - ydir)
-
-    #Checking if transformed coord not a brick or air:
-    if player.level_coord(tx,ty) not in [1,0]:
-        return True
-    #If tranfsormed coord is air
-    elif player.level_coord(tx,ty) == 0:
-        #If brick is below:
-        if next_block(tx, ty, 0, -1):
-            return True
-        #If brick is not below but moving right,left,or down and currently on ground
-        if dy != -1:
-            return True
-    return False
-
-#0 == Empty
-#1 == Brick
-#2 == Ladder
-#3 == Rope
-#4 == Gold
-
 def create_level (num):
+    #0 == Empty, 1 == Brick, 2 == Ladder, 3 == Rope, 4 == Gold
     screen = []
     screen.extend([1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,0,0,0,0,0,2,1,1,1,1,1,1,1,1,1,1,1,1,0])
     screen.extend([1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
@@ -280,23 +261,16 @@ def create_level (num):
     screen.extend([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
     return screen
 
-#Returning image
-def image (sx,sy,what):
-        return Image(Point(sx+CELL_SIZE/2,sy+CELL_SIZE/2),what)
-
 def create_screen (level,window):
-    # use this instead of Rectangle below for nicer screen
+    #Intializing images
     brick = 'brick.gif'
     ladder = 'ladder.gif'
     rope = 'rope.gif'
     gold = 'gold.gif'
-
     #Map:
     Tiles = {1: brick, 2: ladder, 3: rope, 4: gold}
-
     #List of screen elements:
     elements = [[None for i in range(20)] for j in range(35)]
-
     #Loop to create map
     for (index,cell) in enumerate(level):
         if cell != 0:
@@ -305,54 +279,57 @@ def create_screen (level,window):
             elt = image (sx,sy,Tiles[cell])
             elements[px][py] = elt
             elt.draw(window)
-
     return elements
 
+def create_baddies(window, level, player):
+    positions = [(5,2),(10,2), (15,2)]
+    baddies = []
+    for pos in positions:
+        baddies.append(Baddie(pos[0],pos[1],window,level,player))
+    return baddies
 
-MOVE = {
-    'Left': (-1,0),
-    'Right': (1,0),
-    'Up' : (0,-1),
-    'Down' : (0,1)
-}
-
-DIG = {
-    'a':(-1,1,-1,0),
-    'z':(1,1,1,0)
-}
-
-def main ():
-
+def create_window():
+    #Create Window
     window = GraphWin("Maze", WINDOW_WIDTH+20, WINDOW_HEIGHT+20)
-
+    #Sienna Border
     rect = Rectangle(Point(5,5),Point(WINDOW_WIDTH+15,WINDOW_HEIGHT+15))
     rect.setFill('sienna')
     rect.setOutline('sienna')
     rect.draw(window)
+    #White Inside
     rect = Rectangle(Point(10,10),Point(WINDOW_WIDTH+10,WINDOW_HEIGHT+10))
     rect.setFill('white')
     rect.setOutline('white')
     rect.draw(window)
+    return window
 
+#Main Game:
+def main ():
+    #Initializing Variables:
+    MOVE = {'Left': (-1,0), 'Right': (1,0), 'Up' : (0,-1), 'Down' : (0,1)}
+    DIG = {'a':(-1,1,-1,0), 'z':(1,1,1,0)}
+    exit_built = False
+
+    #Starting Level:
+        #Creating Window:
+    window = create_window()
+        #Creating Level
     level = create_level(1)
-
     elements = create_screen(level,window)
-
+        #Creating Event Queu
     queue = Event_Queue()
-
+        #Creating Characters
     p = Player(10,18,window,level)
-
-    baddie1 = Baddie(5,2,window,level,p)
-    baddie2 = Baddie(10,2,window,level,p)
-    baddie3 = Baddie(15,2,window,level,p)
-    baddies = [baddie1,baddie2,baddie3]
+    baddies = create_baddies(window, level, p)
+        #Adding objects to Queu
     for baddie in baddies:
         queue.enqueue(1000,baddie)
 
-    exit_built = False
-
+    #Running Game Loop:
     while not p.at_exit():
+        #Get Key Input:
         key = window.checkKey()
+        #dig, move, or quit:
         if key == 'q':
             window.close()
             exit(0)
@@ -363,14 +340,16 @@ def main ():
         if key in DIG:
             (xd,yd,xn,yn) = DIG[key]
             p.dig(xd,yd,xn,yn,elements)
-
-        p.pickup_gold(elements)    
+        #Pick up Gold:
+        p.pickup_gold(elements)  
+        #Performes Queu Action:  
         queue.dequeue_if_ready()
-
+        #Building Exit:
         if check_gold(level) == False and exit_built == False:
             exit_built = True
             build_exit(level,elements,p,window)
-            
+
+    #Win Sequence:        
     won(window)
 
 if __name__ == '__main__':
