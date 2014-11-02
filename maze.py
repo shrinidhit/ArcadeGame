@@ -219,20 +219,14 @@ def check_gold(level):
     return gold
 
 def build_exit(level,elts,player,win):
-    level[index(34,0)] = 2
-    level[index(34,1)] = 2
-    level[index(34,2)] = 2
-
     ladder = 'ladder.gif'
-
-    l1 = screen_pos(34,0)
-    l2 = screen_pos(34,1)
-    l3 = screen_pos(34,2)
-
-    image(l1[0],l1[1],ladder).draw(win)
-    image(l2[0],l2[1],ladder).draw(win)
-    image(l3[0],l3[1],ladder).draw(win)
-
+    positions = [(34,0), (34,1), (34,2)]
+    #Draw Ladder
+    for pos in positions:
+        level[index(pos[0],pos[1])] = 2
+        tile = screen_pos(pos[0], pos[1])
+        image(tile[0], tile[1], ladder).draw(win)
+    #Redraw Player to be on top
     player._img.undraw()
     player._img.draw(win)
 
