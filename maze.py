@@ -9,6 +9,7 @@
 
 from graphics import *
 import random
+import time
 
 LEVEL_WIDTH = 35
 LEVEL_HEIGHT = 20    
@@ -142,7 +143,7 @@ class Baddie (Character):
             if x1<x2:
                 return -1
         #First, prioritize y position to try moving in y direction    
-        if self._player._y != self._x:
+        if self._player._y != self._y:
             ydir = compare(self._player._y, self._y)
             #try y motion
             if self.is_move_valid(0, ydir):
@@ -154,7 +155,7 @@ class Baddie (Character):
             else:
                 self.move(-1,0)
         #If y position is equal, priorotize x motion
-        else:
+        elif self._player._x != self._x:
             xdir = compare(self._player._x, self._x)
             if self.is_move_valid(xdir, 0):
                 self.move(xdir, 0)
@@ -164,7 +165,10 @@ class Baddie (Character):
                 self.move(0,1)
             else:
                 self.move(0,-1)
-        queue.enqueue(100,self)
+        else:
+            lost(self._window)
+        time.sleep(.001)
+        queue.enqueue(1000,self)
 
 
 class Event_Queue(object):
@@ -343,7 +347,7 @@ def main ():
     baddie3 = Baddie(15,2,window,level,p)
     baddies = [baddie1,baddie2,baddie3]
     for baddie in baddies:
-        queue.enqueue(100,baddie)
+        queue.enqueue(1000,baddie)
 
     exit_built = False
 
