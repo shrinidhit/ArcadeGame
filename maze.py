@@ -135,7 +135,7 @@ class Baddie (Character):
         Character.__init__(self,'red.gif',x,y,window,level)
         self._player = player
 
-    def event(self):
+    def event(self,queue):
         def compare(x1,x2):
             if x1>x2:
                 return 1
@@ -155,7 +155,7 @@ class Baddie (Character):
                 self.move(-1,0)
         #If y position is equal, priorotize x motion
         else:
-            xdir = compare(player._x, self._x)
+            xdir = compare(self._player._x, self._x)
             if self.is_move_valid(xdir, 0):
                 self.move(xdir, 0)
             if self.is_move_valid(-xdir, 0):
@@ -164,6 +164,8 @@ class Baddie (Character):
                 self.move(0,1)
             else:
                 self.move(0,-1)
+        queue.enqueue(100,self)
+
 
 class Event_Queue(object):
     def __init__(self):
@@ -173,17 +175,11 @@ class Event_Queue(object):
         self.queue[obj] = when
 
     def dequeue_if_ready(self):
-        items_to_delete = []
         for key,val in self.queue.iteritems():
             if val == 0:
-                key.event()
-                items_to_delete.append(key)
+                key.event(self)
             else:
                 self.queue[key] -= 1
-
-        for key in items_to_delete:
-            del self.queue[key]
-
 
 def lost (window):
     t = Text(Point(WINDOW_WIDTH/2+10,WINDOW_HEIGHT/2+10),'YOU LOST!')
@@ -342,12 +338,12 @@ def main ():
 
     p = Player(10,18,window,level)
 
-    baddie1 = Baddie(5,1,window,level,p)
-    baddie2 = Baddie(10,1,window,level,p)
-    baddie3 = Baddie(15,1,window,level,p)
+    baddie1 = Baddie(5,2,window,level,p)
+    baddie2 = Baddie(10,2,window,level,p)
+    baddie3 = Baddie(15,2,window,level,p)
     baddies = [baddie1,baddie2,baddie3]
     for baddie in baddies:
-        queue.enqueue(1,baddie)
+        queue.enqueue(100,baddie)
 
     exit_built = False
 
@@ -364,15 +360,13 @@ def main ():
             (xd,yd,xn,yn) = DIG[key]
             p.dig(xd,yd,xn,yn,elements)
 
-        p.pickup_gold(elements)        
+        p.pickup_gold(elements)    
         queue.dequeue_if_ready()
 
         if check_gold(level) == False and exit_built == False:
             exit_built = True
             build_exit(level,elements,p,window)
-
-        # baddies should probably move here
-
+            
     won(window)
 
 if __name__ == '__main__':
